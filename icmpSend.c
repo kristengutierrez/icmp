@@ -2,6 +2,14 @@
 
 #define ICMP_HEADER_LEN 4
 
+struct icmpPkt {
+  uchar type;
+  uchar code;
+  ushort chksum;
+  int data;
+};
+
+
 syscall icmpSend(struct ethergram *pkt, uchar type, uchar code, uint datalen,struct netaddr *src, struct netaddr *dst) {
   struct ipgram *ip = NULL; //need the payload of ipgram to set as icmp
   //struct ethergram *egram = NULL; //not sure if we need this
@@ -41,12 +49,6 @@ syscall icmpSend(struct ethergram *pkt, uchar type, uchar code, uint datalen,str
   
   //write(ETH0, buf, PKTSZ)
   
-  struct icmpPkt {
-    uchar type;
-    uchar code;
-    ushort chksum;
-    int data;
-  };
   
   struct icmpPkt *icmp = NULL;
   icmp->type = type;
