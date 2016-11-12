@@ -4,11 +4,22 @@
 
 syscall icmpSend(struct ethergram *pkt, uchar type, uchar code, uint datalen,struct netaddr *src, struct netaddr *dst) {
   struct ipgram *ip = NULL; //need the payload of ipgram to set as icmp
-  struct ethergram *egram = NULL;
+  //struct ethergram *egram = NULL; //not sure if we need this
   uchar *buf;
+  uchar srcMac[ETH_ADDR_LEN];
   
+  buf = (uchar *)malloc(PKTSZ);
   
-  ip = pkt->data;
+  control(ETH0, ETH_CTRL_GET_MAC, (ulong) srcMac, 0);
+  
+  pkt->src = srcMac;
+  
+  for(i = 0; i < ETH_ADDR_LEN; i++)
+  {
+    pkt->dst[i] = 0XFF;
+  }
+  pkt->type = htons(ETYPE_IPv4);
+  pkt->data = ip;
   
   ip->ver_ihl = (uchar)(IPv4_VERSION << 4);
   ip->ver_ihl += IPv4_HDR_LEN; //may need IPv4_MAX_HDRLEN
@@ -45,14 +56,24 @@ syscall icmpSend(struct ethergram *pkt, uchar type, uchar code, uint datalen,str
   
   ip->opts = icmp;
   
+  icmp->data = 3;
   
-  //send packet with number in it, have the other machine send back the number, right before you send the packet, right after you receive the response packet, record the time and subtract the two
-  
+  memcpy(buf, &pkt, PKTSZ);
   
   if (NULL == pkt) {
     return SYSERR;
   }
   
+  
+  if ((write(ETH0, buf, PKTSZ)) == SYSERR) {
+    fprintf(CONSOLE, "%s\n", "Packet didn't send");
+  } else {
+    fprintf(CONSOLE, "%s\n", "Sent ethergram packet from icmpSend");
+  }
+  //send packet with number in it, have the other machine send back the number, right before you send the packet, right after you receive the response packet, record the time and subtract the two
+  
+  
+  free(buf);
   
   
   
