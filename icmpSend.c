@@ -1,8 +1,12 @@
 #include <xinu.h>
 
-syscall icmpSend(struct ethergram *pkt, uchar type, uint datalen,struct netaddr *src, struct netaddr *dst) {
+#define ICMP_HEADER_LEN 4
+
+syscall icmpSend(struct ethergram *pkt, uchar type, uchar code, uint datalen,struct netaddr *src, struct netaddr *dst) {
   struct ipgram *ip = NULL; //need the payload of ipgram to set as icmp
-  uchar *icmp = NULL;
+  struct ethergram *egram = NULL;
+  uchar *buf;
+  
   
   ip = pkt->data;
   
@@ -21,15 +25,28 @@ syscall icmpSend(struct ethergram *pkt, uchar type, uint datalen,struct netaddr 
   }
   memcpy(ip->dst, dst->addr, IPv4_ADDR_LEN);
   
-  ip->chksum = 0;
-  ip->chksum = checksum((uchar *)ip, IPv4_HDR_LEN);
+ // ip->chksum = 0;
+ // ip->chksum = checksum((uchar *)ip, IPv4_HDR_LEN);
   
   //write(ETH0, buf, PKTSZ)
   
+  struct icmpPkt {
+    uchar type;
+    uchar code;
+    ushort chksum;
+    int data;
+  };
+  
+  struct icmpPkt *icmp = NULL;
+  icmp->type = type;
+  icmp->code = code;
+  icmp->chksum = 0;
+  icmp->chksum = netChksum((uchar *)icmp, datalen + ICMP_HEADER_LEN);
+  
+  ip->opts = icmp;
   
   
-  icmp = ip->opts; //trying to get payload of ipgram
-  
+  //send packet with number in it, have the other machine send back the number, right before you send the packet, right after you receive the response packet, record the time and subtract the two
   
   
   if (NULL == pkt) {
