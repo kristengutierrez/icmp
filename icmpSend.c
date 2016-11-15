@@ -20,14 +20,19 @@ syscall icmpSend(struct ethergram *pkt, uchar type, uchar code, int datalen,stru
   
   control(ETH0, ETH_CTRL_GET_MAC, (ulong) srcMac, 0);
   
-  pkt->src = *srcMac; //incompatible types when assigning to type ‘uchar[6]’ from type ‘uchar *’
+  //pkt->src = *srcMac; //incompatible types when assigning to type ‘uchar[6]’ from type ‘uchar *’
+  
+  memcpy(pkt->src, srcMac, ETH_ADDR_LEN); //trying to stuff ethergram's src with srcMac address
+  
   
   for(i = 0; i < ETH_ADDR_LEN; i++)
   {
     pkt->dst[i] = 0XFF;
   }
   pkt->type = htons(ETYPE_IPv4);
-  pkt->data = ip; //incompatible types when assigning to type ‘char[1]’ from type ‘struct ipgram *’
+  //pkt->data = ip; //incompatible types when assigning to type ‘char[1]’ from type ‘struct ipgram *’
+  memcpy(pkt->data, ip, IP_ADDR_LEN);
+  
   
   ip->ver_ihl = (uchar)(IPv4_VERSION << 4);
   ip->ver_ihl += IPv4_HDR_LEN; //may need IPv4_MAX_HDRLEN
@@ -54,9 +59,10 @@ syscall icmpSend(struct ethergram *pkt, uchar type, uchar code, int datalen,stru
   icmp->type = type;
   icmp->code = code;
   icmp->chksum = 0;
-  icmp->chksum = netChksum((uchar *)icmp, datalen + ICMP_HEADER_LEN);  //implicit declaration of function ‘netChksum’
-  
+  icmp->chksum = checksum((uchar *)icmp, datalen + ICMP_HEADER_LEN);
   ip->opts = icmp;    //incompatible types when assigning to type ‘uchar[1]’ from type ‘struct icmpPkt *’
+  memcpy(ip->opts, icmp, IP_ADDR_LEN); //PROBABLY CHANGE LENGTH IDK WHAT ITS SUPPOSED TO BE FOR ICMP
+  
   
   icmp->data = 3;
   
